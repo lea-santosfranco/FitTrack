@@ -10,6 +10,7 @@ CREATE TABLE IF NOT EXISTS User (
   password   VARCHAR(255) NOT NULL,
   weight     DECIMAL(5,2),
   goal       ENUM('lose', 'maintain', 'gain') DEFAULT 'maintain',
+  role       ENUM('user', 'admin') DEFAULT 'user',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;

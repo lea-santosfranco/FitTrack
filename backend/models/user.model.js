@@ -16,10 +16,17 @@ const UserModel = {
 
   async findById(id) {
     const [rows] = await pool.execute(
-      'SELECT id, username, email, weight, goal, created_at, updated_at FROM User WHERE id = ?',
+      'SELECT id, username, email, weight, goal, role, created_at, updated_at FROM User WHERE id = ?',
       [id]
     );
     return rows[0] || null;
+  },
+
+  async findAll() {
+    const [rows] = await pool.execute(
+      'SELECT id, username, email, weight, goal, role, created_at, updated_at FROM User ORDER BY id'
+    );
+    return rows;
   },
 
   async create({ username, email, password, weight, goal }) {
@@ -50,6 +57,11 @@ const UserModel = {
   async updatePassword(id, newPassword) {
     const hash = await bcrypt.hash(newPassword, SALT_ROUNDS);
     await pool.execute('UPDATE User SET password = ? WHERE id = ?', [hash, id]);
+  },
+
+  async updateRole(id, role) {
+    await pool.execute('UPDATE User SET role = ? WHERE id = ?', [role, id]);
+    return this.findById(id);
   },
 
   async verifyPassword(plain, hash) {
