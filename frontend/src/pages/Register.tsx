@@ -44,24 +44,27 @@ export default function Register() {
 
         <form onSubmit={handleSubmit} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Nom d'utilisateur</label>
+            <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">Nom d'utilisateur</label>
             <input
+              id="username"
               name="username" value={form.username} onChange={handleChange} required
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="johndoe"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Email</label>
+            <label htmlFor="email" className="block text-sm font-medium text-gray-700 mb-1">Email</label>
             <input
+              id="email"
               type="email" name="email" value={form.email} onChange={handleChange} required
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="vous@exemple.com"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
+            <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
             <input
+              id="password"
               type="password" name="password" value={form.password} onChange={handleChange} required minLength={6}
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
               placeholder="6 caractères minimum"
@@ -69,16 +72,18 @@ export default function Register() {
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Poids (kg)</label>
+              <label htmlFor="weight" className="block text-sm font-medium text-gray-700 mb-1">Poids (kg)</label>
               <input
+                id="weight"
                 type="number" name="weight" value={form.weight} onChange={handleChange} step="0.1" min="30" max="300"
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
                 placeholder="70"
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Objectif</label>
+              <label htmlFor="goal" className="block text-sm font-medium text-gray-700 mb-1">Objectif</label>
               <select
+                id="goal"
                 name="goal" value={form.goal} onChange={handleChange}
                 className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >

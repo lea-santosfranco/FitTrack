@@ -37,7 +37,7 @@ export default function Sidebar() {
               }`
             }
           >
-            <span>{icon}</span>
+            <span aria-hidden="true">{icon}</span>
             <span>{label}</span>
           </NavLink>
         ))}
@@ -48,7 +48,7 @@ export default function Sidebar() {
           onClick={handleLogout}
           className="w-full flex items-center gap-3 px-4 py-3 rounded-lg text-gray-300 hover:bg-gray-800 transition-colors"
         >
-          <span>🚪</span>
+          <span aria-hidden="true">🚪</span>
           <span>Déconnexion</span>
         </button>
       </div>
