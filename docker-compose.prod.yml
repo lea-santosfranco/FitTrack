@@ -1,0 +1,77 @@
+services:
+  # ━━━━ SERVICE 1 : MySQL ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  mysql:
+    image: mysql:8.0
+    container_name: fittrack-mysql
+    restart: unless-stopped
+    environment:
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
+      MYSQL_USER: ${DB_USER}
+      MYSQL_PASSWORD: ${DB_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - fittrack-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ━━━━ SERVICE 2 : BACKEND Node.js ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: fittrack-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+    env_file:
+      - .env
+    networks:
+      - fittrack-network
+    depends_on:
+      mysql:
+        condition: service_healthy
+
+  # ━━━━ SERVICE 3 : FRONTEND React (build statique, servi par Nginx) ━━━━━
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.prod
+    container_name: fittrack-frontend
+    restart: unless-stopped
+    networks:
+      - fittrack-network
+    depends_on:
+      - backend
+
+  # ━━━━ SERVICE 4 : NGINX (proxy inverse + TLS) ━━━━━━━━━━━━━━━━━━━━━━━━━
+  nginx:
+    image: nginx:alpine
+    container_name: fittrack-nginx
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.prod.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/certs:/etc/nginx/certs:ro
+    networks:
+      - fittrack-network
+    depends_on:
+      - backend
+      - frontend
+
+# ━━━━ RÉSEAU INTERNE ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+networks:
+  fittrack-network:
+    driver: bridge
+
+# ━━━━ VOLUMES PERSISTANTS ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+volumes:
+  mysql_data:
+    driver: local
