@@ -3,7 +3,7 @@ const router         = express.Router();
 const AuthController = require('../controllers/auth.controller');
 const authMiddleware = require('../middleware/auth.middleware');
 const validate       = require('../middleware/validate.middleware');
-const { registerValidator, loginValidator, updateProfileValidator } = require('../validators/auth.validator');
+const { registerValidator, loginValidator, updateProfileValidator, resendVerificationValidator } = require('../validators/auth.validator');
 
 /**
  * @openapi
@@ -25,11 +25,48 @@ const { registerValidator, loginValidator, updateProfileValidator } = require('.
  *               weight: { type: number }
  *               goal: { type: string, enum: [lose, maintain, gain] }
  *     responses:
- *       201: { description: Compte créé, JWT renvoyé }
+ *       201: { description: Compte créé, email de vérification envoyé }
  *       400: { description: Validation échouée }
  *       409: { description: Email ou username déjà utilisé }
  */
 router.post('/register', registerValidator, validate, AuthController.register);
+
+/**
+ * @openapi
+ * /auth/verify-email:
+ *   get:
+ *     summary: Vérifie l'adresse email d'un utilisateur via le token reçu par email
+ *     tags: [Auth]
+ *     parameters:
+ *       - in: query
+ *         name: token
+ *         required: true
+ *         schema: { type: string }
+ *     responses:
+ *       200: { description: Email vérifié }
+ *       400: { description: Token invalide ou expiré }
+ */
+router.get('/verify-email', AuthController.verifyEmail);
+
+/**
+ * @openapi
+ * /auth/resend-verification:
+ *   post:
+ *     summary: Renvoie un email de vérification (réponse générique pour éviter l'énumération de comptes)
+ *     tags: [Auth]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [email]
+ *             properties:
+ *               email: { type: string }
+ *     responses:
+ *       200: { description: Réponse générique (toujours 200) }
+ */
+router.post('/resend-verification', resendVerificationValidator, validate, AuthController.resendVerification);
 
 /**
  * @openapi

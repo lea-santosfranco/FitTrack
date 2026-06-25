@@ -1,14 +1,16 @@
 import { useState, FormEvent } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import api from '../services/api';
-import { useAuth } from '../hooks/useAuth';
+
+// Même règle que côté backend : 8 caractères min, 1 majuscule, 1 minuscule, 1 chiffre, 1 caractère spécial
+const PASSWORD_REGEX = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{8,}$/;
+const PASSWORD_HINT  = '8 caractères min., avec majuscule, minuscule, chiffre et caractère spécial.';
 
 export default function Register() {
-  const { login }    = useAuth();
-  const navigate     = useNavigate();
-  const [form,    setForm]    = useState({ username: '', email: '', password: '', weight: '', goal: 'maintain' });
-  const [error,   setError]   = useState('');
-  const [loading, setLoading] = useState(false);
+  const [form,      setForm]      = useState({ username: '', email: '', password: '', weight: '', goal: 'maintain' });
+  const [error,     setError]     = useState('');
+  const [loading,   setLoading]   = useState(false);
+  const [registered, setRegistered] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     setForm({ ...form, [e.target.name]: e.target.value });
@@ -17,18 +19,40 @@ export default function Register() {
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+    if (!PASSWORD_REGEX.test(form.password)) {
+      setError(PASSWORD_HINT);
+      return;
+    }
     setLoading(true);
     try {
       const payload = { ...form, weight: form.weight ? parseFloat(form.weight) : undefined };
-      const res = await api.post('/auth/register', payload);
-      login(res.data.token, res.data.user);
-      navigate('/dashboard');
+      await api.post('/auth/register', payload);
+      setRegistered(true);
     } catch (err: any) {
       setError(err.response?.data?.error || 'Erreur lors de l\'inscription');
     } finally {
       setLoading(false);
     }
   };
+
+  if (registered) {
+    return (
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center py-8">
+        <div className="bg-white rounded-2xl shadow-lg p-8 w-full max-w-md text-center">
+          <h1 className="text-3xl font-bold text-blue-600 mb-4">FitTrack</h1>
+          <p className="text-gray-700">
+            Compte créé ! Un email de vérification a été envoyé à <strong>{form.email}</strong>.
+          </p>
+          <p className="text-gray-500 text-sm mt-3">
+            Cliquez sur le lien reçu pour activer votre compte, puis connectez-vous.
+          </p>
+          <Link to="/login" className="inline-block mt-6 text-blue-600 font-medium hover:underline">
+            Aller à la connexion
+          </Link>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-100 flex items-center justify-center py-8">
@@ -65,10 +89,12 @@ export default function Register() {
             <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">Mot de passe</label>
             <input
               id="password"
-              type="password" name="password" value={form.password} onChange={handleChange} required minLength={6}
+              type="password" name="password" value={form.password} onChange={handleChange} required
+              pattern={PASSWORD_REGEX.source} title={PASSWORD_HINT}
               className="w-full border border-gray-300 rounded-lg px-4 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
-              placeholder="6 caractères minimum"
+              placeholder="••••••••"
             />
+            <p className="text-xs text-gray-400 mt-1">{PASSWORD_HINT}</p>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>

@@ -1,22 +1,13 @@
 const request = require('supertest');
 const app     = require('../server');
-const jwt     = require('jsonwebtoken');
-
-// Utilisateur de test simulé (id doit exister dans la DB pour les workouts)
-// Les tests workouts nécessitent un utilisateur réel dans la DB.
-// On crée d'abord un compte, puis on utilise son token.
+const { registerVerifiedUser } = require('./helpers');
 
 let token;
 let workoutId;
 
 beforeAll(async () => {
-  const unique = Date.now();
-  const res = await request(app).post('/api/auth/register').send({
-    username: `wtest_${unique}`,
-    email:    `wtest_${unique}@example.com`,
-    password: 'password123',
-  });
-  token = res.body.token;
+  const result = await registerVerifiedUser({ username: `wtest_${Date.now()}` });
+  token = result.token;
 });
 
 const auth = () => ({ Authorization: `Bearer ${token}` });

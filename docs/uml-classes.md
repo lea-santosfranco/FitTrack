@@ -6,12 +6,21 @@ classDiagram
     +findByEmail(email) User
     +findByUsername(username) User
     +findById(id) User
-    +create(data) int
+    +create(data) {id, verificationToken}
+    +findByVerificationToken(token) User
+    +verifyEmail(id) void
+    +setNewVerificationToken(id) string
     +update(id, data) User
     +updatePassword(id, password) void
     +verifyPassword(plain, hash) bool
     +updateRole(id, role) User
     +delete(id) void
+  }
+
+  class ProgramModel {
+    +findAll() Program[]
+    +findById(id) Program
+    +cloneToWorkout(programId, userId, date) int
   }
 
   class ExerciseModel {
@@ -38,6 +47,14 @@ classDiagram
     +login(req, res)
     +me(req, res)
     +updateProfile(req, res)
+    +verifyEmail(req, res)
+    +resendVerification(req, res)
+  }
+
+  class ProgramController {
+    +getAll(req, res)
+    +getOne(req, res)
+    +clone(req, res)
   }
 
   class ExerciseController {
@@ -78,15 +95,23 @@ classDiagram
     +requireRole(role) middleware
   }
 
+  class Mailer {
+    +sendVerificationEmail(to, token) void
+  }
+
   AuthController --> UserModel
+  AuthController --> Mailer
   AdminController --> UserModel
   ExerciseController --> ExerciseModel
   WorkoutController --> WorkoutModel
   WorkoutController --> ExerciseModel
+  ProgramController --> ProgramModel
+  ProgramController --> WorkoutModel
   StatsController --> WorkoutModel
   StatsController --> ExerciseModel
   ExerciseController ..> authMiddleware
   ExerciseController ..> checkRole : create/update/delete
   AdminController ..> checkRole : admin
   WorkoutController ..> authMiddleware
+  ProgramController ..> authMiddleware
 ```

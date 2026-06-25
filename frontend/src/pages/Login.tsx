@@ -6,14 +6,18 @@ import { useAuth } from '../hooks/useAuth';
 export default function Login() {
   const { login }    = useAuth();
   const navigate     = useNavigate();
-  const [email,    setEmail]    = useState('');
-  const [password, setPassword] = useState('');
-  const [error,    setError]    = useState('');
-  const [loading,  setLoading]  = useState(false);
+  const [email,        setEmail]        = useState('');
+  const [password,     setPassword]     = useState('');
+  const [error,        setError]        = useState('');
+  const [loading,      setLoading]      = useState(false);
+  const [needsVerify,  setNeedsVerify]  = useState(false);
+  const [resent,       setResent]       = useState(false);
 
   const handleSubmit = async (e: FormEvent) => {
     e.preventDefault();
     setError('');
+    setNeedsVerify(false);
+    setResent(false);
     setLoading(true);
     try {
       const res = await api.post('/auth/login', { email, password });
@@ -21,9 +25,15 @@ export default function Login() {
       navigate('/dashboard');
     } catch (err: any) {
       setError(err.response?.data?.error || 'Erreur de connexion');
+      if (err.response?.status === 403) setNeedsVerify(true);
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleResend = async () => {
+    await api.post('/auth/resend-verification', { email });
+    setResent(true);
   };
 
   return (
@@ -35,6 +45,16 @@ export default function Login() {
         {error && (
           <div className="bg-red-50 border border-red-200 text-red-700 rounded-lg p-3 mb-4 text-sm">
             {error}
+            {needsVerify && (
+              <button
+                type="button"
+                onClick={handleResend}
+                disabled={resent}
+                className="block mt-2 text-blue-600 font-medium hover:underline disabled:opacity-60"
+              >
+                {resent ? 'Email renvoyé ✓' : "Renvoyer l'email de vérification"}
+              </button>
+            )}
           </div>
         )}
 

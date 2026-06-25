@@ -4,6 +4,7 @@ import { useFetch } from '../hooks/useFetch';
 import { Workout, Exercise, WorkoutExercise } from '../types';
 import api from '../services/api';
 import LoadingSpinner from '../components/LoadingSpinner';
+import WorkoutTimer from '../components/WorkoutTimer';
 
 export default function WorkoutDetail() {
   const { id }   = useParams<{ id: string }>();
@@ -148,6 +149,8 @@ export default function WorkoutDetail() {
           </>
         )}
       </div>
+
+      <WorkoutTimer />
 
       {/* Exercices */}
       <div className="bg-white rounded-2xl shadow-sm p-6 space-y-4">

@@ -1,7 +1,9 @@
-const pool   = require('../config/database');
-const bcrypt = require('bcrypt');
+const pool    = require('../config/database');
+const bcrypt  = require('bcrypt');
+const crypto  = require('crypto');
 
 const SALT_ROUNDS = 10;
+const VERIFICATION_TOKEN_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
 const UserModel = {
   async findByEmail(email) {
@@ -16,7 +18,7 @@ const UserModel = {
 
   async findById(id) {
     const [rows] = await pool.execute(
-      'SELECT id, username, email, weight, goal, role, created_at, updated_at FROM User WHERE id = ?',
+      'SELECT id, username, email, weight, goal, role, email_verified, created_at, updated_at FROM User WHERE id = ?',
       [id]
     );
     return rows[0] || null;
@@ -24,18 +26,47 @@ const UserModel = {
 
   async findAll() {
     const [rows] = await pool.execute(
-      'SELECT id, username, email, weight, goal, role, created_at, updated_at FROM User ORDER BY id'
+      'SELECT id, username, email, weight, goal, role, email_verified, created_at, updated_at FROM User ORDER BY id'
     );
     return rows;
   },
 
   async create({ username, email, password, weight, goal }) {
-    const hash = await bcrypt.hash(password, SALT_ROUNDS);
+    const hash  = await bcrypt.hash(password, SALT_ROUNDS);
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + VERIFICATION_TOKEN_TTL_MS);
+
     const [result] = await pool.execute(
-      'INSERT INTO User (username, email, password, weight, goal) VALUES (?, ?, ?, ?, ?)',
-      [username, email, hash, weight || null, goal || 'maintain']
+      `INSERT INTO User (username, email, password, weight, goal, verification_token, verification_token_expires)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      [username, email, hash, weight || null, goal || 'maintain', token, expires]
     );
-    return result.insertId;
+    return { id: result.insertId, verificationToken: token };
+  },
+
+  async findByVerificationToken(token) {
+    const [rows] = await pool.execute(
+      'SELECT * FROM User WHERE verification_token = ?',
+      [token]
+    );
+    return rows[0] || null;
+  },
+
+  async verifyEmail(id) {
+    await pool.execute(
+      'UPDATE User SET email_verified = 1, verification_token = NULL, verification_token_expires = NULL WHERE id = ?',
+      [id]
+    );
+  },
+
+  async setNewVerificationToken(id) {
+    const token = crypto.randomBytes(32).toString('hex');
+    const expires = new Date(Date.now() + VERIFICATION_TOKEN_TTL_MS);
+    await pool.execute(
+      'UPDATE User SET verification_token = ?, verification_token_expires = ? WHERE id = ?',
+      [token, expires, id]
+    );
+    return token;
   },
 
   async update(id, { username, email, weight, goal }) {

@@ -42,6 +42,26 @@ export interface Workout {
   updated_at:     string;
 }
 
+export interface ProgramExercise {
+  pe_id:        number;
+  id:           number;
+  name:         string;
+  category:     string;
+  muscle_group: string | null;
+  sets:         number | null;
+  reps:         number | null;
+  position:     number;
+}
+
+export interface Program {
+  id:          number;
+  name:        string;
+  level:       'débutant' | 'intermédiaire' | 'avancé';
+  goal:        'lose' | 'maintain' | 'gain';
+  description: string | null;
+  exercises?:  ProgramExercise[];
+}
+
 export interface Stats {
   total_workouts:     number;
   total_duration:     number;
@@ -49,6 +69,8 @@ export interface Stats {
   recent_workouts:    { date: string; title: string; duration: number }[];
   top_exercises:      { name: string; category: string; count: number }[];
   category_breakdown: { category: string; count: number }[];
+  personal_records:   { exercise_id: number; name: string; category: string; weight_used: number; date: string }[];
+  streak:             number;
 }
 
 export interface AuthContextType {

@@ -5,6 +5,7 @@ const links = [
   { to: '/dashboard',  label: 'Dashboard',  icon: '📊' },
   { to: '/exercises',  label: 'Exercices',   icon: '🏋️' },
   { to: '/workouts',   label: 'Séances',     icon: '📅' },
+  { to: '/programs',   label: 'Programmes',  icon: '📋' },
   { to: '/profile',    label: 'Profil',      icon: '👤' },
 ];
 

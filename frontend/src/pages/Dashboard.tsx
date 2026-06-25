@@ -2,10 +2,22 @@ import { useAuth } from '../hooks/useAuth';
 import { useFetch } from '../hooks/useFetch';
 import { Stats } from '../types';
 import LoadingSpinner from '../components/LoadingSpinner';
+import api from '../services/api';
+import { downloadShareImage } from '../utils/shareImage';
 import {
   BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell, Legend,
 } from 'recharts';
+
+const downloadExport = async (format: 'csv' | 'pdf') => {
+  const res = await api.get(`/stats/export/${format}`, { responseType: 'blob' });
+  const url = URL.createObjectURL(res.data);
+  const link = document.createElement('a');
+  link.href = url;
+  link.download = `fittrack_${format === 'csv' ? 'historique.csv' : 'bilan.pdf'}`;
+  link.click();
+  URL.revokeObjectURL(url);
+};
 
 const COLORS = ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6'];
 
@@ -34,22 +46,45 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8">
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800">
-          Bonjour, {user?.username} 👋
-        </h2>
-        <p className="text-gray-500 mt-1">
-          Objectif : {GOAL_LABELS[user?.goal || 'maintain']}
-          {user?.weight ? ` · ${user.weight} kg` : ''}
-        </p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h2 className="text-2xl font-bold text-gray-800">
+            Bonjour, {user?.username} 👋
+          </h2>
+          <p className="text-gray-500 mt-1">
+            Objectif : {GOAL_LABELS[user?.goal || 'maintain']}
+            {user?.weight ? ` · ${user.weight} kg` : ''}
+          </p>
+        </div>
+        <div className="flex gap-2">
+          <button
+            onClick={() => downloadExport('csv')}
+            className="text-sm bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-700 hover:bg-gray-50"
+          >
+            Export CSV
+          </button>
+          <button
+            onClick={() => downloadExport('pdf')}
+            className="text-sm bg-white border border-gray-300 rounded-lg px-3 py-2 text-gray-700 hover:bg-gray-50"
+          >
+            Export PDF
+          </button>
+          <button
+            onClick={() => data && downloadShareImage(user?.username ?? '', data)}
+            className="text-sm bg-blue-600 text-white rounded-lg px-3 py-2 hover:bg-blue-700"
+          >
+            Partager mon bilan
+          </button>
+        </div>
       </div>
 
       {/* KPIs */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {[
           { label: 'Séances totales',    value: data?.total_workouts,     icon: '📅' },
           { label: 'Minutes d\'entraîn.', value: data?.total_duration,    icon: '⏱️' },
           { label: 'Exercices pratiqués', value: data?.distinct_exercises, icon: '🏋️' },
+          { label: 'Jours consécutifs',  value: data?.streak,              icon: '🔥' },
         ].map(({ label, value, icon }) => (
           <div key={label} className="bg-white rounded-2xl shadow-sm p-6 flex items-center gap-4">
             <span className="text-4xl">{icon}</span>
@@ -108,6 +143,25 @@ export default function Dashboard() {
                   <span className="ml-2 text-xs text-gray-400 bg-gray-100 rounded px-2 py-0.5">{ex.category}</span>
                 </div>
                 <span className="text-blue-600 font-semibold">{ex.count}×</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Records personnels */}
+      {(data?.personal_records?.length ?? 0) > 0 && (
+        <div className="bg-white rounded-2xl shadow-sm p-6">
+          <h3 className="font-semibold text-gray-700 mb-4">Records personnels</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {data!.personal_records.map((pr) => (
+              <div key={pr.exercise_id} className="flex items-center justify-between border border-gray-100 rounded-lg px-4 py-3">
+                <div>
+                  <span className="font-medium text-gray-800">{pr.name}</span>
+                  <span className="ml-2 text-xs text-gray-400 bg-gray-100 rounded px-2 py-0.5">{pr.category}</span>
+                  <p className="text-xs text-gray-400 mt-0.5">{pr.date?.slice(0, 10)}</p>
+                </div>
+                <span className="text-blue-600 font-semibold">{pr.weight_used} kg</span>
               </div>
             ))}
           </div>

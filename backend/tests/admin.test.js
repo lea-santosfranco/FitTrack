@@ -1,6 +1,7 @@
 const request = require('supertest');
 const app     = require('../server');
 const jwt     = require('jsonwebtoken');
+const { registerVerifiedUser } = require('./helpers');
 
 const adminToken = jwt.sign({ id: 1, email: 'admin@t.com', username: 'admin', role: 'admin' }, process.env.JWT_SECRET, { expiresIn: '1h' });
 const userToken  = jwt.sign({ id: 999, email: 't@t.com', username: 'tester', role: 'user' }, process.env.JWT_SECRET, { expiresIn: '1h' });
@@ -10,13 +11,8 @@ const authUser   = () => ({ Authorization: `Bearer ${userToken}` });
 let targetId;
 
 beforeAll(async () => {
-  const unique = Date.now();
-  const res = await request(app).post('/api/auth/register').send({
-    username: `roletest_${unique}`,
-    email:    `roletest_${unique}@example.com`,
-    password: 'password123',
-  });
-  targetId = res.body.user.id;
+  const target = await registerVerifiedUser({ username: `roletest_${Date.now()}` });
+  targetId = target.id;
 });
 
 describe('GET /api/admin/users', () => {

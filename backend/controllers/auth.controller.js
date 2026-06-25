@@ -1,5 +1,6 @@
 const jwt       = require('jsonwebtoken');
 const UserModel  = require('../models/user.model');
+const { sendVerificationEmail } = require('../utils/mailer');
 
 const generateToken = (user) => {
   return jwt.sign(
@@ -32,11 +33,12 @@ const AuthController = {
         return res.status(409).json({ error: 'Username already taken.' });
       }
 
-      const userId = await UserModel.create({ username, email, password, weight, goal });
-      const user   = await UserModel.findById(userId);
-      const token  = generateToken(user);
+      const { id: userId, verificationToken } = await UserModel.create({ username, email, password, weight, goal });
+      await sendVerificationEmail(email, verificationToken);
 
-      res.status(201).json({ message: 'Account created successfully.', token, user });
+      res.status(201).json({
+        message: 'Account created. Please check your email to verify your account before logging in.',
+      });
     } catch (err) {
       console.error('Register error:', err);
       res.status(500).json({ error: 'Failed to create account.' });
@@ -62,13 +64,62 @@ const AuthController = {
         return res.status(401).json({ error: 'Invalid credentials.' });
       }
 
-      const { password: _, ...userWithoutPassword } = user;
+      if (!user.email_verified) {
+        return res.status(403).json({ error: 'Please verify your email before logging in.' });
+      }
+
+      const { password: _, verification_token, verification_token_expires, ...userWithoutPassword } = user;
       const token = generateToken(user);
 
       res.json({ message: 'Login successful.', token, user: userWithoutPassword });
     } catch (err) {
       console.error('Login error:', err);
       res.status(500).json({ error: 'Login failed.' });
+    }
+  },
+
+  // GET /api/auth/verify-email?token=...
+  async verifyEmail(req, res) {
+    try {
+      const { token } = req.query;
+      if (!token) return res.status(400).json({ error: 'Verification token is required.' });
+
+      const user = await UserModel.findByVerificationToken(token);
+      if (!user) return res.status(400).json({ error: 'Invalid or already used verification link.' });
+
+      if (new Date(user.verification_token_expires) < new Date()) {
+        return res.status(400).json({ error: 'Verification link has expired. Please request a new one.' });
+      }
+
+      await UserModel.verifyEmail(user.id);
+      res.json({ message: 'Email verified successfully. You can now log in.' });
+    } catch (err) {
+      console.error('VerifyEmail error:', err);
+      res.status(500).json({ error: 'Failed to verify email.' });
+    }
+  },
+
+  // POST /api/auth/resend-verification
+  async resendVerification(req, res) {
+    try {
+      const { email } = req.body;
+      if (!email) return res.status(400).json({ error: 'Email is required.' });
+
+      // Réponse générique dans tous les cas pour ne pas révéler si l'email existe (anti-énumération)
+      const genericResponse = { message: 'If an account exists for this email, a verification link has been sent.' };
+
+      const user = await UserModel.findByEmail(email);
+      if (!user || user.email_verified) {
+        return res.json(genericResponse);
+      }
+
+      const token = await UserModel.setNewVerificationToken(user.id);
+      await sendVerificationEmail(user.email, token);
+
+      res.json(genericResponse);
+    } catch (err) {
+      console.error('ResendVerification error:', err);
+      res.status(500).json({ error: 'Failed to resend verification email.' });
     }
   },
 

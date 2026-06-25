@@ -1,16 +1,12 @@
 const request = require('supertest');
 const app     = require('../server');
+const { registerVerifiedUser } = require('./helpers');
 
 let token;
 
 beforeAll(async () => {
-  const unique = Date.now();
-  const res = await request(app).post('/api/auth/register').send({
-    username: `stattest_${unique}`,
-    email:    `stattest_${unique}@example.com`,
-    password: 'password123',
-  });
-  token = res.body.token;
+  const result = await registerVerifiedUser({ username: `stattest_${Date.now()}` });
+  token = result.token;
 });
 
 const auth = () => ({ Authorization: `Bearer ${token}` });

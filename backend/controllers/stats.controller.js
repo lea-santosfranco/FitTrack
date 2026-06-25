@@ -143,7 +143,12 @@ const StatsController = {
   async exportCsv(req, res) {
     try {
       const rows = await fetchHistory(req.user.id);
-      const escape = (val) => `"${String(val ?? '').replace(/"/g, '""')}"`;
+      // Neutralise l'injection de formule CSV (=, +, -, @ en début de cellule, ouvert dans Excel/Sheets)
+      const escape = (val) => {
+        let str = String(val ?? '');
+        if (/^[=+\-@]/.test(str)) str = `'${str}`;
+        return `"${str.replace(/"/g, '""')}"`;
+      };
       const header = ['Date', 'Titre', 'Duree (min)', 'Exercices', 'Notes'].join(';');
       const lines = rows.map(r => [
         toDateStr(r.date),

@@ -10,8 +10,10 @@ const ExerciseModel = {
       vals.push(category);
     }
     if (search) {
+      // Échappe les caractères spéciaux LIKE (%, _, \) saisis par l'utilisateur
       sql += ' AND (name LIKE ? OR description LIKE ? OR muscle_group LIKE ?)';
-      const like = `%${search}%`;
+      const escaped = search.replace(/[\\%_]/g, (c) => `\\${c}`);
+      const like = `%${escaped}%`;
       vals.push(like, like, like);
     }
 
